@@ -25,13 +25,20 @@ const DownloadSection: FC<DownloadSectionProps> = ({ sessionId, onDownloadReady 
       const link = document.createElement('a')
       link.href = url
       
-      // ファイル名を設定（Content-Dispositionヘッダーから取得するか、デフォルト名を使用）
+      // ファイル名を設定（RFC2231対応でUTF-8ファイル名を正しく処理）
       const disposition = response.headers['content-disposition']
-      let filename = 'tax_data.zip'
+      let filename = 'tax_data_converted.zip'
       if (disposition) {
-        const filenameMatch = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
-        if (filenameMatch && filenameMatch[1]) {
-          filename = filenameMatch[1].replace(/['"]/g, '')
+        // UTF-8エンコード済みファイル名を検出
+        const utf8Match = disposition.match(/filename\*=UTF-8''([^;]*)/)
+        if (utf8Match && utf8Match[1]) {
+          filename = decodeURIComponent(utf8Match[1])
+        } else {
+          // 従来のファイル名処理
+          const filenameMatch = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+          if (filenameMatch && filenameMatch[1]) {
+            filename = filenameMatch[1].replace(/['"]/g, '')
+          }
         }
       }
       
@@ -63,11 +70,19 @@ const DownloadSection: FC<DownloadSectionProps> = ({ sessionId, onDownloadReady 
           <h3 className="font-medium text-gray-900">生成されるファイル</h3>
         </div>
         <ul className="text-sm text-gray-600 space-y-1">
-          <li>• 課税売上.csv - 売上データの税率別集計</li>
-          <li>• 課税仕入.csv - 仕入データの税率別集計</li>
-          <li>• 集計サマリー.csv - 全体の集計情報</li>
+          <li>• 課税売上_SJIS.csv / 課税売上_UTF8.csv - 売上データの税率別集計</li>
+          <li>• 課税仕入_SJIS.csv / 課税仕入_UTF8.csv - 仕入データの税率別集計</li>
+          <li>• 集計サマリー_SJIS.csv / 集計サマリー_UTF8.csv - 全体の集計情報</li>
+          <li>• ファイル説明.txt - 使用方法ガイド</li>
           <li>• 処理情報.txt - 変換処理の詳細情報</li>
         </ul>
+        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+          <p className="text-sm text-blue-800 font-medium mb-1">🛡️ 文字化け対策済み</p>
+          <p className="text-xs text-blue-700">
+            Windows Excel → SJIS版ファイル使用<br/>
+            Mac Excel/Google Sheets → UTF8版ファイル使用
+          </p>
+        </div>
       </div>
 
       <button

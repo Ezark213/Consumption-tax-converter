@@ -81,7 +81,11 @@ async def upload_file(file: UploadFile = File(...)):
                 "warnings": normalized_data.get('warnings', []),
                 "errors": normalized_data.get('errors', []),
                 "sales_items_count": len(normalized_data.get('sales_items', [])),
-                "purchase_items_count": len(normalized_data.get('purchase_items', []))
+                "purchase_items_count": len(normalized_data.get('purchase_items', [])),
+                "encoding_info": {
+                    "formats": ["Shift_JIS (Windows Excel用)", "UTF-8 (Mac/Google Sheets用)"],
+                    "recommendation": "Windows Excelをお使いの場合はSJIS版ファイルをご使用ください"
+                }
             }
             
             return preview
@@ -108,11 +112,17 @@ async def download_csv(session_id: str):
         csv_generator = CSVGenerator()
         csv_content = csv_generator.generate_zip(data)
         
-        # ZIPファイルとして返却
+        # ZIPファイルとして返却（文字エンコーディング対応）
+        headers = {
+            "Content-Disposition": "attachment; filename*=UTF-8''tax_data_converted.zip",
+            "Content-Type": "application/zip; charset=utf-8",
+            "Cache-Control": "no-cache"
+        }
+        
         return StreamingResponse(
             io.BytesIO(csv_content),
             media_type="application/zip",
-            headers={"Content-Disposition": "attachment; filename=tax_data.zip"}
+            headers=headers
         )
         
     except Exception as e:

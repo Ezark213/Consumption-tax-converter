@@ -43,28 +43,45 @@ class CSVGenerator:
         zip_buffer = io.BytesIO()
         
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            # 課税売上CSVを追加
-            sales_csv = self._generate_sales_csv(data)
-            zip_file.writestr('課税売上.csv', sales_csv)
+            # 課税売上CSVを追加（Shift_JIS版とUTF-8版の両方）
+            sales_csv_sjis = self._generate_sales_csv(data, encoding='shift_jis')
+            sales_csv_utf8 = self._generate_sales_csv(data, encoding='utf-8-sig')
+            zip_file.writestr('課税売上_SJIS.csv', sales_csv_sjis)
+            zip_file.writestr('課税売上_UTF8.csv', sales_csv_utf8)
             
-            # 課税仕入CSVを追加
-            purchases_csv = self._generate_purchases_csv(data)
-            zip_file.writestr('課税仕入.csv', purchases_csv)
+            # 課税仕入CSVを追加（Shift_JIS版とUTF-8版の両方）
+            purchases_csv_sjis = self._generate_purchases_csv(data, encoding='shift_jis')
+            purchases_csv_utf8 = self._generate_purchases_csv(data, encoding='utf-8-sig')
+            zip_file.writestr('課税仕入_SJIS.csv', purchases_csv_sjis)
+            zip_file.writestr('課税仕入_UTF8.csv', purchases_csv_utf8)
             
-            # サマリーCSVを追加
-            summary_csv = self._generate_summary_csv(data)
-            zip_file.writestr('集計サマリー.csv', summary_csv)
+            # サマリーCSVを追加（Shift_JIS版とUTF-8版の両方）
+            summary_csv_sjis = self._generate_summary_csv(data, encoding='shift_jis')
+            summary_csv_utf8 = self._generate_summary_csv(data, encoding='utf-8-sig')
+            zip_file.writestr('集計サマリー_SJIS.csv', summary_csv_sjis)
+            zip_file.writestr('集計サマリー_UTF8.csv', summary_csv_utf8)
             
-            # メタデータファイルを追加
+            # メタデータファイルを追加（UTF-8で保存）
             metadata_txt = self._generate_metadata_txt(data)
-            zip_file.writestr('処理情報.txt', metadata_txt)
+            zip_file.writestr('処理情報.txt', metadata_txt.encode('utf-8'))
+            
+            # 使用説明書を追加
+            readme_content = self._generate_readme_txt()
+            zip_file.writestr('ファイル説明.txt', readme_content.encode('utf-8'))
         
         zip_buffer.seek(0)
         return zip_buffer.getvalue()
     
-    def _generate_sales_csv(self, data: Dict[str, Any]) -> str:
+    def _generate_sales_csv(self, data: Dict[str, Any], encoding: str = 'utf-8-sig') -> bytes:
         """
         課税売上のCSVを生成
+        
+        Args:
+            data: 正規化されたデータ
+            encoding: 文字エンコーディング ('utf-8-sig', 'shift_jis')
+        
+        Returns:
+            bytes: CSVファイルのバイナリデータ
         """
         sales_items = data.get('sales_items', [])
         
@@ -113,15 +130,31 @@ class CSVGenerator:
             df['total'] = df[['軽減8%', '10%', '輸出売上', '非課税', '不課税']].sum(axis=1)
             df = df.sort_values('total', ascending=False).drop('total', axis=1)
         
-        # Windowsで確実に文字化けしないよう設定
-        csv_content = df.to_csv(index=False, encoding='utf-8', lineterminator='\r\n')
-        # BOMを手動で追加してWindows Excelでの表示を改善
-        bom = '\ufeff'
-        return bom + csv_content
+        # エンコーディングに応じたCSV生成
+        try:
+            if encoding == 'shift_jis':
+                # Shift_JISで出力（日本のExcel標準）
+                csv_content = df.to_csv(index=False, lineterminator='\r\n', quoting=1)
+                return csv_content.encode('shift_jis', errors='replace')
+            else:
+                # UTF-8 with BOM（BOM付きUTF-8）
+                csv_content = df.to_csv(index=False, lineterminator='\r\n', quoting=1)
+                return csv_content.encode('utf-8-sig')
+        except UnicodeEncodeError:
+            # Shift_JISでエンコードできない文字がある場合はUTF-8にフォールバック
+            csv_content = df.to_csv(index=False, lineterminator='\r\n', quoting=1)
+            return csv_content.encode('utf-8-sig')
     
-    def _generate_purchases_csv(self, data: Dict[str, Any]) -> str:
+    def _generate_purchases_csv(self, data: Dict[str, Any], encoding: str = 'utf-8-sig') -> bytes:
         """
         課税仕入のCSVを生成
+        
+        Args:
+            data: 正規化されたデータ
+            encoding: 文字エンコーディング ('utf-8-sig', 'shift_jis')
+        
+        Returns:
+            bytes: CSVファイルのバイナリデータ
         """
         purchase_items = data.get('purchase_items', [])
         
@@ -167,15 +200,31 @@ class CSVGenerator:
         df['total'] = df[['軽減8%_経過', '軽減8%_適格', '10%_経過', '10%_適格', '非課税', '不課税']].sum(axis=1)
         df = df.sort_values('total', ascending=False).drop('total', axis=1)
         
-        # Windowsで確実に文字化けしないよう設定
-        csv_content = df.to_csv(index=False, encoding='utf-8', lineterminator='\r\n')
-        # BOMを手動で追加してWindows Excelでの表示を改善
-        bom = '\ufeff'
-        return bom + csv_content
+        # エンコーディングに応じたCSV生成
+        try:
+            if encoding == 'shift_jis':
+                # Shift_JISで出力（日本のExcel標準）
+                csv_content = df.to_csv(index=False, lineterminator='\r\n', quoting=1)
+                return csv_content.encode('shift_jis', errors='replace')
+            else:
+                # UTF-8 with BOM（BOM付きUTF-8）
+                csv_content = df.to_csv(index=False, lineterminator='\r\n', quoting=1)
+                return csv_content.encode('utf-8-sig')
+        except UnicodeEncodeError:
+            # Shift_JISでエンコードできない文字がある場合はUTF-8にフォールバック
+            csv_content = df.to_csv(index=False, lineterminator='\r\n', quoting=1)
+            return csv_content.encode('utf-8-sig')
     
-    def _generate_summary_csv(self, data: Dict[str, Any]) -> str:
+    def _generate_summary_csv(self, data: Dict[str, Any], encoding: str = 'utf-8-sig') -> bytes:
         """
         集計サマリーのCSVを生成
+        
+        Args:
+            data: 正規化されたデータ
+            encoding: 文字エンコーディング ('utf-8-sig', 'shift_jis')
+        
+        Returns:
+            bytes: CSVファイルのバイナリデータ
         """
         summary_data = [
             {
@@ -218,11 +267,20 @@ class CSVGenerator:
             })
         
         df = pd.DataFrame(summary_data)
-        # Windowsで確実に文字化けしないよう設定
-        csv_content = df.to_csv(index=False, encoding='utf-8', lineterminator='\r\n')
-        # BOMを手動で追加してWindows Excelでの表示を改善
-        bom = '\ufeff'
-        return bom + csv_content
+        # エンコーディングに応じたCSV生成
+        try:
+            if encoding == 'shift_jis':
+                # Shift_JISで出力（日本のExcel標準）
+                csv_content = df.to_csv(index=False, lineterminator='\r\n', quoting=1)
+                return csv_content.encode('shift_jis', errors='replace')
+            else:
+                # UTF-8 with BOM（BOM付きUTF-8）
+                csv_content = df.to_csv(index=False, lineterminator='\r\n', quoting=1)
+                return csv_content.encode('utf-8-sig')
+        except UnicodeEncodeError:
+            # Shift_JISでエンコードできない文字がある場合はUTF-8にフォールバック
+            csv_content = df.to_csv(index=False, lineterminator='\r\n', quoting=1)
+            return csv_content.encode('utf-8-sig')
     
     def _generate_metadata_txt(self, data: Dict[str, Any]) -> str:
         """
@@ -269,5 +327,59 @@ class CSVGenerator:
             lines.append("## 会社情報")
             lines.append(f"会社名: {data['company_name']}")
             lines.append("")
+        
+        return "\n".join(lines)
+    
+    def _generate_readme_txt(self) -> str:
+        """
+        ファイル説明書を生成
+        """
+        lines = [
+            "# 税区分表変換ツール - 出力ファイル説明",
+            "",
+            "## ファイル一覧",
+            "",
+            "### CSVファイル（2つの形式で提供）",
+            "",
+            "#### Shift_JIS版（推奨）",
+            "- 課税売上_SJIS.csv",
+            "- 課税仕入_SJIS.csv", 
+            "- 集計サマリー_SJIS.csv",
+            "",
+            "**使用方法**: 日本語版Excel環境で文字化けせずに開けます",
+            "**対象**: Windows Excel 2013以降（日本語環境）",
+            "",
+            "#### UTF-8版（互換性用）",
+            "- 課税売上_UTF8.csv",
+            "- 課税仕入_UTF8.csv",
+            "- 集計サマリー_UTF8.csv", 
+            "",
+            "**使用方法**: BOM付きUTF-8形式です",
+            "**対象**: 新しいExcel、Google Sheets、その他のツール",
+            "",
+            "## 使い分けガイド",
+            "",
+            "1. **日本語Windows Excel**: SJIS版をご使用ください",
+            "2. **Mac Excel**: UTF8版をお試しください",
+            "3. **Google Sheets**: UTF8版を推奨します",
+            "4. **その他ツール**: UTF8版から試してください",
+            "",
+            "## 文字化けが発生した場合",
+            "",
+            "1. 別の形式（SJIS⇔UTF8）をお試しください",
+            "2. Excel「データ」タブ→「テキストファイル」から手動でエンコーディングを指定",
+            "3. テキストエディタで開いて内容を確認",
+            "",
+            "## その他のファイル",
+            "",
+            "- **処理情報.txt**: 変換処理の詳細情報",
+            "- **ファイル説明.txt**: このファイル（使用方法説明）",
+            "",
+            "## サポート情報",
+            "",
+            "生成日時: " + pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S'),
+            "ツール: 税区分表変換ツール v1.0",
+            ""
+        ]
         
         return "\n".join(lines)

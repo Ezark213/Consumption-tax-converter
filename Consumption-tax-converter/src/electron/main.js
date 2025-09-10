@@ -161,10 +161,13 @@ ipcMain.handle('app-version', () => {
 
 ipcMain.handle('show-save-dialog', async () => {
   const result = await dialog.showSaveDialog(mainWindow, {
+    defaultPath: 'tax_data_converted.zip',
     filters: [
+      { name: 'ZIP Files (文字化け対策済み)', extensions: ['zip'] },
       { name: 'CSV Files', extensions: ['csv'] },
       { name: 'All Files', extensions: ['*'] }
-    ]
+    ],
+    properties: ['createDirectory']
   })
   return result
 })

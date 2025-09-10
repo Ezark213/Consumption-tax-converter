@@ -97,7 +97,17 @@ def process_file_cli(file_path):
         with open(output_path, 'wb') as f:
             f.write(zip_content)
         
-        print(f"\nCSV file generated: {output_path}")
+        print(f"\nCSV ZIP file generated: {output_path}")
+        print("Generated files:")
+        print("  - 課税売上_SJIS.csv (Windows Excel用)")
+        print("  - 課税売上_UTF8.csv (Mac/Google Sheets用)")
+        print("  - 課税仕入_SJIS.csv (Windows Excel用)")  
+        print("  - 課税仕入_UTF8.csv (Mac/Google Sheets用)")
+        print("  - 集計サマリー_SJIS.csv (Windows Excel用)")
+        print("  - 集計サマリー_UTF8.csv (Mac/Google Sheets用)")
+        print("  - ファイル説明.txt (使用方法ガイド)")
+        print("  - 処理情報.txt (変換詳細)")
+        print("\n[重要] Windows Excelをお使いの場合はSJIS版ファイルをご使用ください")
         
         # 警告・エラー表示
         warnings = processed_data.get('warnings', [])

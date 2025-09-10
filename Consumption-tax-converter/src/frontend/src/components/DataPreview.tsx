@@ -90,7 +90,8 @@ const DataPreview: FC<DataPreviewProps> = ({ data }) => {
                   処理が正常に完了しました
                 </p>
                 <p className="text-xs text-green-700">
-                  データの変換とバリデーションが成功しました
+                  データの変換とバリデーションが成功しました<br/>
+                  文字化け対策: Shift_JIS + UTF-8 両形式で出力
                 </p>
               </div>
             </div>
