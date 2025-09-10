@@ -1,0 +1,26 @@
+# ビルド用の拡張要件
+# 基本の要件をインクルード
+-r requirements.txt
+
+# PyInstallerとビルド関連
+pyinstaller==6.2.0
+auto-py-to-exe==2.41.0
+
+# 隠れた依存関係（PyInstallerで必要になる可能性があるもの）
+altgraph==0.17.4
+pyinstaller-hooks-contrib==2023.10
+
+# Windowsでのビルドに必要
+pywin32==306; sys_platform == "win32"
+pywin32-ctypes==0.2.2; sys_platform == "win32"
+
+# macOSでのビルドに必要  
+pyobjc-framework-Cocoa==10.0; sys_platform == "darwin"
+pyobjc-framework-Quartz==10.0; sys_platform == "darwin"
+
+# 追加のランタイム依存関係
+certifi>=2023.7.22
+charset-normalizer>=3.3.0
+idna>=3.4
+urllib3>=2.0.0
+requests>=2.31.0

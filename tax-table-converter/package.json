@@ -1,0 +1,88 @@
+{
+  "name": "tax-table-converter",
+  "version": "1.0.0",
+  "description": "日本の税区分表を標準CSVに変換するデスクトップアプリケーション",
+  "main": "dist/electron/main.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"wait-on http://localhost:3000 && npm run dev:electron\"",
+    "dev:backend": "cd src/backend && python main.py",
+    "dev:frontend": "cd src/frontend && npm run dev",
+    "dev:electron": "cross-env NODE_ENV=development electron .",
+    "build": "npm run build:frontend && npm run build:backend && npm run build:electron",
+    "build:frontend": "cd src/frontend && npm run build",
+    "build:backend": "python scripts/build_backend.py",
+    "build:electron": "npm run copy:frontend && electron-builder",
+    "copy:frontend": "cpx \"src/frontend/dist/**/*\" \"dist/frontend\"",
+    "postinstall": "cd src/frontend && npm install",
+    "prepare:build": "python scripts/install_build_deps.py",
+    "clean": "rimraf dist dist-exe",
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:linux": "electron-builder --linux"
+  },
+  "build": {
+    "appId": "com.company.tax-table-converter",
+    "productName": "税区分表変換ツール",
+    "directories": {
+      "output": "dist-exe",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/electron/**/*",
+      "dist/frontend/**/*",
+      "node_modules/**/*",
+      "!src/**/*",
+      "!**/*.ts",
+      "!**/*.map"
+    ],
+    "extraResources": [
+      {
+        "from": "dist/python",
+        "to": "python"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "build/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
+  "dependencies": {
+    "electron": "^27.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "cpx": "^1.5.0",
+    "cross-env": "^7.0.3",
+    "electron-builder": "^24.6.4",
+    "rimraf": "^5.0.5",
+    "wait-on": "^7.2.0"
+  },
+  "keywords": [
+    "税務",
+    "会計",
+    "消費税",
+    "CSV変換",
+    "freee",
+    "マネーフォワード",
+    "弥生"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
